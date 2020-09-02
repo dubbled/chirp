@@ -19,8 +19,9 @@ go func() {
 l, err := net.Listen("tcp", ":8080")
 for {
     conn, err := l.Accept()
-    client := &Client{Writer: conn}
-    nest.InsertClient(topic, client)
+    client := &Client{}
+    client.SetWriter(w)
+    err := nest.InsertClient(topic, client)
     err := client.Write([]byte("connected to hub!"))
 }
 ```

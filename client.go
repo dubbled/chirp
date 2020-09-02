@@ -14,7 +14,7 @@ const (
 )
 
 type Client struct {
-	io.Writer
+	w      io.Writer
 	lock   *sync.Mutex // locked when writing to Writer
 	id     string
 	errors []error
@@ -23,14 +23,14 @@ type Client struct {
 
 // Write writes p to a Client's writer
 func (c *Client) Write(p []byte) error {
-	if c.Writer == nil {
+	if c.w == nil {
 		return ErrNoWriter
 	}
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	_, err := c.Writer.Write(p)
+	_, err := c.w.Write(p)
 	if err != nil {
 		c.errors = append(c.errors, err)
 	}
@@ -49,5 +49,10 @@ func (c *Client) State() ClientState {
 
 func (c *Client) SetID(id string) *Client {
 	c.id = id
+	return c
+}
+
+func (c *Client) SetWriter(w io.Writer) *Client {
+	c.w = w
 	return c
 }

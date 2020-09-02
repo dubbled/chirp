@@ -38,7 +38,8 @@ func TestMsgSubscribers(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
-		c := &Client{Writer: buf}
+		c := &Client{}
+		c.SetWriter(buf)
 		err := testNest.InsertClient(testTopic, c)
 		assert.Nil(t, err)
 	}
@@ -62,7 +63,8 @@ func TestMsgSubscribersIgnore(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
-		c := &Client{Writer: buf}
+		c := &Client{}
+		c.SetWriter(buf)
 		err := testNest.InsertClient(testTopic, c)
 		assert.Nil(t, err)
 		if i%2 == 0 {
