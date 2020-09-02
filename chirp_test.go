@@ -3,6 +3,7 @@ package chirp
 import (
 	"bytes"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -12,21 +13,35 @@ import (
 func TestInsertClient(t *testing.T) {
 	testNest := NewNest(nil)
 	testCount := 1000
+	type testPair struct {
+		topic string
+		count int
+	}
+	testChan := make(chan testPair, testCount)
+	wg := &sync.WaitGroup{}
 
 	for i := 0; i < testCount; i++ {
+		wg.Add(1)
 		go func() {
 			topic := uuid.New().String()
 			numClients := rand.Intn(500) + 1
+			testChan <- testPair{topic, numClients}
+
 			for j := 0; j < numClients; j++ {
 				c := &Client{}
 				err := testNest.InsertClient(topic, c)
 				assert.Nil(t, err)
 				assert.NotNil(t, c)
 			}
-
-			clientCount := len(testNest.topicMap[topic].clients)
-			assert.Equal(t, numClients, clientCount)
+			wg.Done()
 		}()
+	}
+	wg.Wait()
+	close(testChan)
+
+	for pair := range testChan {
+		clientCount := len(testNest.topicMap[pair.topic].clients)
+		assert.Equal(t, pair.count, clientCount)
 	}
 }
 
