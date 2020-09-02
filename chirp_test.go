@@ -19,7 +19,8 @@ func TestInsertClient(t *testing.T) {
 			numClients := rand.Intn(500) + 1
 			for j := 0; j < numClients; j++ {
 				c := &Client{}
-				testNest.InsertClient(topic, c)
+				err := testNest.InsertClient(topic, c)
+				assert.Nil(t, err)
 				assert.NotNil(t, c)
 			}
 
@@ -38,7 +39,8 @@ func TestMsgSubscribers(t *testing.T) {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
 		c := &Client{Writer: buf}
-		testNest.InsertClient(testTopic, c)
+		err := testNest.InsertClient(testTopic, c)
+		assert.Nil(t, err)
 	}
 
 	err := testNest.MsgSubscribers(testTopic, []byte("12345"))
@@ -61,7 +63,8 @@ func TestMsgSubscribersIgnore(t *testing.T) {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
 		c := &Client{Writer: buf}
-		testNest.InsertClient(testTopic, c)
+		err := testNest.InsertClient(testTopic, c)
+		assert.Nil(t, err)
 		if i%2 == 0 {
 			ignored = append(ignored, c)
 		}
@@ -89,7 +92,8 @@ func TestRemoveClient(t *testing.T) {
 	toRemove := []*Client{}
 	for i := 0; i < clientCount; i++ {
 		c := &Client{}
-		testNest.InsertClient(testTopic, c)
+		err := testNest.InsertClient(testTopic, c)
+		assert.Nil(t, err)
 		if i%2 == 0 {
 			toRemove = append(toRemove, c)
 		}

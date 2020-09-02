@@ -2,13 +2,13 @@ package chirp
 
 import (
 	"errors"
-	"io"
 	"sync"
 )
 
 var (
-	ErrNoTopic  = errors.New("error: topic nonexistent")
-	ErrNoWriter = errors.New("error: cannot write to nil destination")
+	ErrNoTopic            = errors.New("error: topic nonexistent")
+	ErrNoWriter           = errors.New("error: cannot write to nil destination")
+	ErrInsertFailedClient = errors.New("error: cannot insert failed client")
 )
 
 type Nest struct {
@@ -25,14 +25,6 @@ type Settings struct {
 type clientSlice struct {
 	*sync.Mutex
 	clients []*Client
-}
-
-type Client struct {
-	io.Writer
-	lock   *sync.Mutex // locked when writing to Writer
-	id     string
-	errors []error
-	active bool
 }
 
 func NewNest(s *Settings) *Nest {
@@ -53,10 +45,15 @@ func DefaultSettings() *Settings {
 }
 
 // InsertClient inserts a new client into the Nest
-func (n *Nest) InsertClient(topic string, c *Client) {
-	c.lock = &sync.Mutex{}
-	c.errors = []error{}
-	c.active = true
+func (n *Nest) InsertClient(topic string, c *Client) error {
+	switch c.State() {
+	case FAILED:
+		return ErrInsertFailedClient
+	case INACTIVE:
+		c.lock = &sync.Mutex{}
+		c.active = true
+		c.errors = []error{}
+	}
 
 	n.Lock()
 	defer n.Unlock()
@@ -73,6 +70,7 @@ func (n *Nest) InsertClient(topic string, c *Client) {
 		slice.clients = append(slice.clients, c)
 		slice.Unlock()
 	}
+	return nil
 }
 
 func (n *Nest) MsgSubscribers(topic string, msg []byte, ignore ...*Client) error {
