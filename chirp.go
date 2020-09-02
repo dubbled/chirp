@@ -12,8 +12,8 @@ var (
 )
 
 type Nest struct {
-	*sync.Mutex
 	*Settings
+	lock     *sync.Mutex
 	topicMap map[string]*clientSlice
 }
 
@@ -33,7 +33,7 @@ func NewNest(s *Settings) *Nest {
 	}
 	return &Nest{
 		Settings: s,
-		Mutex:    &sync.Mutex{},
+		lock:     &sync.Mutex{},
 		topicMap: map[string]*clientSlice{},
 	}
 }
@@ -55,8 +55,8 @@ func (n *Nest) InsertClient(topic string, c *Client) error {
 		c.errors = []error{}
 	}
 
-	n.Lock()
-	defer n.Unlock()
+	n.lock.Lock()
+	defer n.lock.Unlock()
 
 	slice, ok := n.topicMap[topic]
 	if !ok {
