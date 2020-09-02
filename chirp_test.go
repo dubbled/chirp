@@ -102,3 +102,9 @@ func TestRemoveClient(t *testing.T) {
 	}
 	assert.Equal(t, clientCount-len(toRemove), len(slice.clients))
 }
+
+func TestClientNoWriter(t *testing.T) {
+	c := &Client{}
+	err := c.Write([]byte("can't write"))
+	assert.NotNil(t, err)
+}
