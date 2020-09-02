@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	ErrNoTopic = errors.New("error: topic nonexistent")
+	ErrNoTopic  = errors.New("error: topic nonexistent")
+	ErrNoWriter = errors.New("error: cannot write to nil destination")
 )
 
 type Nest struct {
@@ -27,8 +28,8 @@ type clientSlice struct {
 }
 
 type Client struct {
-	*sync.Mutex // locked when writing to Writer
 	io.Writer
+	lock   *sync.Mutex // locked when writing to Writer
 	id     string
 	errors []error
 	active bool
@@ -51,32 +52,27 @@ func DefaultSettings() *Settings {
 	}
 }
 
-func (n *Nest) NewClient(topic, id string, dst io.Writer) *Client {
+// InsertClient inserts a new client into the Nest
+func (n *Nest) InsertClient(topic string, c *Client) {
+	c.lock = &sync.Mutex{}
+	c.errors = []error{}
+	c.active = true
+
 	n.Lock()
 	defer n.Unlock()
-
-	client := &Client{
-		Mutex:  &sync.Mutex{},
-		Writer: dst,
-		id:     id,
-		errors: []error{},
-		active: true,
-	}
 
 	slice, ok := n.topicMap[topic]
 	if !ok {
 		slice = &clientSlice{
 			Mutex:   &sync.Mutex{},
-			clients: []*Client{client},
+			clients: []*Client{c},
 		}
 		n.topicMap[topic] = slice
 	} else {
 		slice.Lock()
-		slice.clients = append(slice.clients, client)
+		slice.clients = append(slice.clients, c)
 		slice.Unlock()
 	}
-
-	return client
 }
 
 func (n *Nest) MsgSubscribers(topic string, msg []byte, ignore ...*Client) error {
@@ -124,15 +120,4 @@ func (s *clientSlice) removeClient(c *Client) {
 		s.clients = s.clients[:last]
 	}
 	c.active = false
-}
-
-func (c *Client) Write(p []byte) error {
-	c.Lock()
-	defer c.Unlock()
-
-	_, err := c.Writer.Write(p)
-	if err != nil {
-		c.errors = append(c.errors, err)
-	}
-	return err
 }

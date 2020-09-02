@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewClient(t *testing.T) {
+func TestInsertClient(t *testing.T) {
 	testNest := NewNest(nil)
 	testCount := 1000
 
@@ -18,7 +18,8 @@ func TestNewClient(t *testing.T) {
 			topic := uuid.New().String()
 			numClients := rand.Intn(500) + 1
 			for j := 0; j < numClients; j++ {
-				c := testNest.NewClient(topic, "", nil)
+				c := &Client{}
+				testNest.InsertClient(topic, c)
 				assert.NotNil(t, c)
 			}
 
@@ -36,7 +37,8 @@ func TestMsgSubscribers(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
-		_ = testNest.NewClient(testTopic, "", buf)
+		c := &Client{Writer: buf}
+		testNest.InsertClient(testTopic, c)
 	}
 
 	err := testNest.MsgSubscribers(testTopic, []byte("12345"))
@@ -58,7 +60,8 @@ func TestMsgSubscribersIgnore(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		buf := bytes.NewBuffer(nil)
 		buffers = append(buffers, buf)
-		c := testNest.NewClient(testTopic, "", buf)
+		c := &Client{Writer: buf}
+		testNest.InsertClient(testTopic, c)
 		if i%2 == 0 {
 			ignored = append(ignored, c)
 		}
@@ -85,7 +88,8 @@ func TestRemoveClient(t *testing.T) {
 
 	toRemove := []*Client{}
 	for i := 0; i < clientCount; i++ {
-		c := testNest.NewClient(testTopic, "", nil)
+		c := &Client{}
+		testNest.InsertClient(testTopic, c)
 		if i%2 == 0 {
 			toRemove = append(toRemove, c)
 		}
