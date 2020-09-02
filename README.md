@@ -5,7 +5,7 @@ Is a simple module for concurrent safe fan out delivery to io.Writers
 
 ## Usage
 
-```
+```go
 nest := NewNest(nil) // nil supplies Nest with default settings
 topic := "testing"
 go func() {
@@ -19,7 +19,8 @@ go func() {
 l, err := net.Listen("tcp", ":8080")
 for {
     conn, err := l.Accept()
-    client := nest.NewClient(topic, "client-id", conn)
+    client := &Client{Writer: conn}
+    nest.InsertClient(topic, client)
     err := client.Write([]byte("connected to hub!"))
 }
 ```
